@@ -1,6 +1,7 @@
 #include "my_application.h"
 
 #include <flutter_linux/flutter_linux.h>
+#include <stdlib.h>
 #ifdef GDK_WINDOWING_X11
 #include <gdk/gdkx.h>
 #endif
@@ -19,11 +20,40 @@ static void first_frame_cb(MyApplication* self, FlView* view) {
   gtk_widget_show(gtk_widget_get_toplevel(GTK_WIDGET(view)));
 }
 
+// Exit the process as soon as the window is closed, BEFORE GTK runs its
+// default delete-event handling (which destroys the window and, with it,
+// the FlView/FlEngine children).
+//
+// Why: the Flutter Linux embedder tears down its GL/EGL state as part of
+// that destroy chain (FlView dispose -> fl_engine_dispose ->
+// FlutterEngineShutdown). On some systems that teardown aborts the
+// process (epoxy: "No provider of eglDestroyImageKHR") — a known embedder
+// teardown race, see https://github.com/flutter/flutter/issues/132404.
+// The teardown runs *inside* g_application_run() for GtkApplicationWindow
+// (the window is owned by the application and destroyed on the quit
+// path), so an exit() after g_application_run() is too late.
+//
+// It is safe to skip the destroy chain entirely: the windowing system
+// reclaims all GL resources when the display connection closes on
+// process exit.
+static gboolean my_application_delete_event_cb(GtkWidget* widget,
+                                               GdkEvent* event,
+                                               gpointer user_data) {
+  exit(0);
+}
+
 // Implements GApplication::activate.
 static void my_application_activate(GApplication* application) {
   MyApplication* self = MY_APPLICATION(application);
   GtkWindow* window =
       GTK_WINDOW(gtk_application_window_new(GTK_APPLICATION(application)));
+
+  // See my_application_delete_event_cb: exit before the engine/GL teardown
+  // chain runs. This covers every close path (native title bar close
+  // button, WM close request, and YaruWindowTitleBar's close button which
+  // routes through the yaru_window_linux plugin to gtk_window_close()).
+  g_signal_connect(window, "delete-event",
+                   G_CALLBACK(my_application_delete_event_cb), nullptr);
 
   // Use a header bar when running in GNOME as this is the common style used
   // by applications and is the setup most users will be using (e.g. Ubuntu
