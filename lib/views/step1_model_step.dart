@@ -131,16 +131,24 @@ class _Step1ModelStepState extends State<Step1ModelStep> {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    // Shrinkable: at very narrow widths the button scales
-                    // down instead of overflowing the row.
+                    // Flexible + Align: the Align fills the whole slice of
+                    // free space the Flexible allocates and pins the
+                    // button to its right end, so the button hugs the
+                    // card's right edge (a bare FittedBox here would sit
+                    // right after the text and leave the leftover space
+                    // unused on the right). At narrow widths the
+                    // FittedBox scales the button down instead of
+                    // overflowing the row.
                     Flexible(
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
+                      child: Align(
                         alignment: Alignment.centerRight,
-                        child: FilledButton.icon(
-                          onPressed: _pick,
-                          icon: const Icon(YaruIcons.folder_open, size: 18),
-                          label: const Text('Choose model assertion…'),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: FilledButton.icon(
+                            onPressed: _pick,
+                            icon: const Icon(YaruIcons.folder_open, size: 18),
+                            label: const Text('Choose model assertion…'),
+                          ),
                         ),
                       ),
                     ),

@@ -154,4 +154,64 @@ void main() {
           'are set',
     );
   });
+
+  testWidgets(
+    'empty-state "Choose model assertion" button is right-aligned in its card',
+    (tester) async {
+      tester.view.physicalSize = const Size(1600, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final config = stubbedConfig(); // no model selected
+      await tester.pumpWidget(MaterialApp(home: WizardPage(config: config)));
+      await tester.pumpAndSettle();
+
+      // The placeholder card spans the detail-pane content width; the
+      // button must hug its right content edge (card margin 4 + content
+      // padding 20 = 24), not float in the middle of the row.
+      final cardRight = tester
+          .getSize(
+            find
+                .ancestor(
+                  of: find.text('No model assertion selected'),
+                  matching: find.byType(Card),
+                )
+                .first,
+          )
+          .width +
+              tester.getTopLeft(
+                find
+                    .ancestor(
+                      of: find.text('No model assertion selected'),
+                      matching: find.byType(Card),
+                    )
+                    .first,
+              ).dx;
+
+      final buttonRight = tester
+          .getSize(
+            find
+                .ancestor(
+                  of: find.text('Choose model assertion…'),
+                  matching: find.byType(FilledButton),
+                )
+                .first,
+          )
+          .width +
+              tester.getTopLeft(
+                find
+                    .ancestor(
+                      of: find.text('Choose model assertion…'),
+                      matching: find.byType(FilledButton),
+                    )
+                    .first,
+              ).dx;
+
+      expect(
+        buttonRight,
+        closeTo(cardRight - 24, 1),
+        reason: 'button must be right-aligned inside the placeholder card',
+      );
+    },
+  );
 }
