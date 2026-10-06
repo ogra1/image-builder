@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Image Builder
+Comment=Create Ubuntu Core images from model assertions
+Exec=image-builder
+Icon=${SNAP}/meta/gui/icon.png
+Terminal=false
+Type=Application
+Categories=Development;Utility;
+Keywords=snap;ubuntu core;image;model;
