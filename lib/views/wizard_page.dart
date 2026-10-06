@@ -25,7 +25,7 @@ const _steps = <_StepDef>[
 ];
 
 /// Short marker shown in the sidebar header, e.g. "Image builder (v30)".
-const kVersionShort = 'v1.0.0';
+const kVersionShort = 'v1.1.0';
 
 /// Wizard shell: a collapsible step sidebar (master pane) on the left and
 /// the content of the selected step (detail pane) on the right.

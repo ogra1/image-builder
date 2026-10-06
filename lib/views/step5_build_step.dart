@@ -33,7 +33,7 @@ class Step5BuildStep extends StatefulWidget {
 }
 
 class _Step5BuildStepState extends State<Step5BuildStep> {
-  BuildProcess? _proc;
+  BuildProcessHandle? _proc;
   bool _running = false;
   bool _cancelled = false;
   int? _exitCode;
@@ -81,12 +81,13 @@ class _Step5BuildStepState extends State<Step5BuildStep> {
   void _appendLine(String line) => _append('$line\n');
 
   Future<void> _build() async {
-    final args = widget.config.buildCommand();
-    if (args.isEmpty || _running) return;
+    final config = widget.config;
+    final launch = config.buildLaunch();
+    if (_running) return;
     // Defensive re-check: if the tool vanished since startup (e.g. the
     // snap was removed), say so in the console instead of failing to
     // start the process.
-    final check = await widget.config.toolChecker(widget.config.executable);
+    final check = await config.toolChecker(config.executable);
     if (!check.ok) {
       _appendLine(
         'Cannot build: ${check.hint ?? 'ubuntu-image is not available.'}',
@@ -98,13 +99,9 @@ class _Step5BuildStepState extends State<Step5BuildStep> {
     _output.clear();
     setState(() => _running = true);
     widget.onBuildRunning(true);
-    final fullArgs = widget.config.snapCommand;
-    _appendLine('\$ ${widget.config.executable} ${fullArgs.join(' ')}\n');
+    _appendLine('\$ ${config.storeAuthPrefix}${config.executable} ${config.snapCommand.join(' ')}\n');
     try {
-      final proc = await widget.config.processStarter(
-        widget.config.executable,
-        fullArgs,
-      );
+      final proc = await launch.start();
       _proc = proc;
       proc.stdout
           .transform(const Utf8Decoder(allowMalformed: true))
@@ -125,7 +122,7 @@ class _Step5BuildStepState extends State<Step5BuildStep> {
     } on ProcessException catch (e) {
       _exitCode = -1;
       _appendLine(
-        'Failed to start ${widget.config.executable}: ${e.message}\n'
+        'Failed to start ${config.executable}: ${e.message}\n'
         'Is the "ubuntu-image" snap installed?\n',
       );
     }
@@ -232,6 +229,7 @@ class _Summary extends StatelessWidget {
       'Snaps: ${c.snaps.length}',
       'Validation sets: ${c.validationSets.length}',
       'Assertion files: ${c.assertionFiles.length}',
+      if (c.hasStoreAuth) 'Dedicated store',
       if (c.outputDir.isNotEmpty) 'Output: ${c.outputDir}',
       if (c.imageSize.isNotEmpty) 'Size: ${c.imageSize}',
       if (c.sectorSize != null) 'Sector: ${c.sectorSize}',

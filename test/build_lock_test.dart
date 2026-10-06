@@ -13,7 +13,7 @@ import 'package:ubuntu_image_gui/views/wizard_page.dart';
 
 /// A fake `ubuntu-image` process whose lifecycle is driven by the test.
 /// Widget tests run in a fake-async zone where real `Process` events are
-/// never delivered, so the build's `processStarter` is injected.
+/// never delivered, so the build's launch starter is injected.
 class FakeBuildProcess {
   FakeBuildProcess({required this.releaseAt});
 
@@ -50,7 +50,7 @@ class FakeBuildProcess {
   }
 }
 
-class FakeBuildProcessBuild implements BuildProcess {
+class FakeBuildProcessBuild implements BuildProcessHandle {
   FakeBuildProcessBuild(this._fake);
   final FakeBuildProcess _fake;
 
@@ -91,7 +91,7 @@ void main() {
         'grade': 'dangerous',
       }, parsed: true)
       ..outputDir = '/out'
-      ..processStarter = (exe, args) async {
+      ..launchStarterOverride = (exe, args) async {
         fake.emit('\$ $exe ${args.join(' ')}\n');
         fake.emit('building...\n');
         return FakeBuildProcessBuild(fake);

@@ -95,15 +95,35 @@ class ValidationSet {
   }
 }
 
-/// All user-selected options for an `ubuntu-image snap` build.
-///
-/// A [ChangeNotifier]: UI that depends on the configuration (e.g. the
-/// wizard's sidebar gating) listens to it via `notifyListeners()` so it
-/// refreshes immediately when a value changes.
-/// The build subprocess, as consumed by the Build step. A real
-/// [Process] satisfies this via [BuildProcessImpl]; tests provide a
+/// A fully specified process launch (command + argument vector).
+class BuildProcess {
+  BuildProcess({
+    required this.command,
+    required this.arguments,
+    this.starter,
+  });
+
+  /// The executable to run (e.g. `/bin/sh`).
+  final String command;
+
+  /// Its argument vector.
+  final List<String> arguments;
+
+  /// The injected starter, if any (widget tests provide a fake; real
+  /// builds use `Process.start`).
+  Future<BuildProcessHandle> Function(String, List<String>)? starter;
+
+  Future<BuildProcessHandle> start() =>
+      (starter ??
+              (command, arguments) async => RealBuildProcessHandle(
+                await Process.start(command, arguments),
+              ))(command, arguments);
+}
+
+/// A running build process as consumed by the Build step. A real
+/// [Process] satisfies this via [RealBuildProcessHandle]; tests provide a
 /// lightweight fake without re-implementing the full `Process` API.
-abstract class BuildProcess {
+abstract class BuildProcessHandle {
   Stream<List<int>> get stdout;
 
   Stream<List<int>> get stderr;
@@ -113,9 +133,9 @@ abstract class BuildProcess {
   bool kill(ProcessSignal signal);
 }
 
-/// Adapts a real [Process] to [BuildProcess].
-class BuildProcessImpl implements BuildProcess {
-  BuildProcessImpl(this._p);
+/// Adapts a real [Process] to [BuildProcessHandle].
+class RealBuildProcessHandle implements BuildProcessHandle {
+  RealBuildProcessHandle(this._p);
   final Process _p;
 
   @override
@@ -130,12 +150,6 @@ class BuildProcessImpl implements BuildProcess {
   @override
   bool kill(ProcessSignal signal) => _p.kill(signal);
 }
-
-/// Starts a build process by executable name and argument list.
-typedef ProcessStarter = Future<BuildProcess> Function(
-  String executable,
-  List<String> arguments,
-);
 
 /// Result of verifying the `ubuntu-image` tool on startup.
 class ToolCheck {
@@ -188,12 +202,6 @@ class BuildConfig extends ChangeNotifier {
     }
   };
 
-  /// Starts the build process. Defaults to `Process.start`; overridable
-  /// for tests (widget tests run in a fake-async zone where real process
-  /// events are never delivered).
-  ProcessStarter processStarter = (executable, arguments) async =>
-      BuildProcessImpl(await Process.start(executable, arguments));
-
   // -- Step 1: model assertion -------------------------------------------
   ModelAssertion? model;
 
@@ -203,6 +211,21 @@ class BuildConfig extends ChangeNotifier {
     model = m;
     notifyListeners();
   }
+
+  /// Path of the dedicated-store credential file (output of
+  /// `snapcraft export-login --acls package_access`).
+  ///
+  /// Empty string = use the default (global) snap store. When set, the
+  /// file's content is injected into the build process environment as
+  /// `UBUNTU_STORE_AUTH` — which `ubuntu-image` reads to authenticate
+  /// against the dedicated store.
+  ///
+  /// NOTE: the file is intentionally never read into Dart memory. At
+  /// launch the content is passed via the shell as
+  /// `UBUNTU_STORE_AUTH="$(cat <path>)"`, so the token only ever exists
+  /// in the environment of the `ubuntu-image` subprocess. See
+  /// [buildLaunch].
+  String storeAuthFile = '';
 
   // -- Step 2: additional snaps ------------------------------------------
   final List<ExtraSnap> snaps = [];
@@ -296,6 +319,70 @@ class BuildConfig extends ChangeNotifier {
   /// `ubuntu-image snap <options>`. The `snap` subcommand is mandatory —
   /// calling `ubuntu-image` without it fails.
   List<String> get snapCommand => ['snap', ...buildCommand()];
+
+  // -- Launching the build -------------------------------------------------
+
+  /// Test hook: when set, every [BuildProcess] created by [buildLaunch]
+  /// uses this function to start the process instead of the real
+  /// `Process.start`. (Widget tests run in a fake-async zone where real
+  /// process events are never delivered.)
+  Future<BuildProcessHandle> Function(String, List<String>)?
+      launchStarterOverride;
+
+
+  /// Single-quotes [s] for safe inclusion in a POSIX shell command line.
+  /// Embedded single quotes are escaped as `'\''`.
+  static String shellQuote(String s) =>
+      "'${s.replaceAll("'", r"'\''")}'";
+
+  /// Whether a dedicated-store credential file is configured.
+  bool get hasStoreAuth => storeAuthFile.trim().isNotEmpty;
+
+  /// The `UBUNTU_STORE_AUTH="$(cat '<path>')"` prefix shown in the Build
+  /// step's command-line preview and printed above the console output.
+  /// The token itself is never displayed or read into Dart — only the
+  /// path is.
+  String get storeAuthPrefix {
+    final path = storeAuthFile.trim();
+    if (path.isEmpty) return '';
+    return 'UBUNTU_STORE_AUTH=\$(cat ${shellQuote(path)}) ';
+  }
+
+  /// Describes how the build is launched.
+  ///
+  /// Without a dedicated-store credential file this is a plain
+  /// `Process.start(executable, snapCommand)`.
+  ///
+  /// With one, the build is wrapped in a POSIX shell so the credential
+  /// file's content is injected into the process environment at launch
+  /// time:
+  ///
+  /// ```sh
+  /// UBUNTU_STORE_AUTH="$(cat '<path>')" exec <executable> snap <options>
+  /// ```
+  ///
+  /// The file is read by the shell (and never by Dart), so the token
+  /// never enters this application's memory. `exec` replaces the shell
+  /// with the `ubuntu-image` process, so its exit code and signals
+  /// (e.g. "Stop build") propagate directly.
+  BuildProcess buildLaunch() {
+    final command = snapCommand;
+    final starter = launchStarterOverride;
+    if (!hasStoreAuth) {
+      return BuildProcess(
+        command: executable,
+        arguments: command,
+        starter: starter,
+      );
+    }
+    final shCmd =
+        '${storeAuthPrefix}exec $executable ${command.map(shellQuote).join(' ')}';
+    return BuildProcess(
+      command: '/bin/sh',
+      arguments: ['-c', shCmd],
+      starter: starter,
+    );
+  }
 }
 
 /// Output verbosity for `ubuntu-image snap`. The tool accepts exactly one
