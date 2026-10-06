@@ -338,7 +338,7 @@ class _Console extends StatelessWidget {
     // inner rows are stretched so the header bar and the text area both
     // span edge-to-edge, like a real terminal.
     return Container(
-      height: 440,
+      height: 420,
       decoration: BoxDecoration(
         color: const Color(0xFF1C1B1F),
         borderRadius: BorderRadius.circular(8),
@@ -388,7 +388,7 @@ class _Console extends StatelessWidget {
           Expanded(
             child: SingleChildScrollView(
               controller: scroll,
-              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               child: SelectableText(
                 output.isEmpty
                     ? 'Output of the build will appear here\u2026'
