@@ -25,7 +25,7 @@ const _steps = <_StepDef>[
 ];
 
 /// Short marker shown in the sidebar header, e.g. "Image builder (v30)".
-const kVersionShort = 'v1.1.0';
+const kVersionShort = 'v1.2.0';
 
 /// Wizard shell: a collapsible step sidebar (master pane) on the left and
 /// the content of the selected step (detail pane) on the right.
@@ -143,7 +143,7 @@ class _WizardPageState extends State<WizardPage> {
     final scheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: const YaruWindowTitleBar(title: Text('Image Builder')),
+        title: const Text('Image Builder'),
       ),
       body: Row(
         // Stretch: without this, short pages size to their content and the

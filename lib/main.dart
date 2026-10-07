@@ -7,10 +7,10 @@ import 'views/wizard_page.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialise the Yaru client-side window chrome: hides the native GTK
-  // title bar and prepares the window so YaruWindowTitleBar can be drawn.
-  await YaruWindowTitleBar.ensureInitialized();
-
+  // Note: no YaruWindowTitleBar.ensureInitialized() on purpose. The native
+  // GTK title bar stays intact and the window manager (mutter) draws the
+  // frame — this keeps the app visually consistent with the other tools in
+  // the group (model builder, gadget editor) and with the desktop.
   runApp(const UbuntuImageApp());
 }
 

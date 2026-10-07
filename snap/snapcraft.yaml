@@ -1,6 +1,6 @@
 name: image-builder
 base: core26
-version: '1.1.0'
+version: '1.2.0'
 summary: A GUI frontend to the "ubuntu-image snap" command
 title: Ubuntu Core Image Builder
 description: |
@@ -157,6 +157,7 @@ parts:
     source-tag: '2.42.10'
     build-attributes: [enable-patchelf]
     meson-parameters:
+      - -Dlibdir=lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR
       - -Dbuiltin_loaders=none
       - -Dgio_sniffing=false
       - -Dgtk_doc=false
@@ -181,7 +182,9 @@ parts:
         patchelf --force-rpath --set-rpath $RPATH $file
       done
       RPATH="\$ORIGIN:/snap/$BASE/current/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR"
-      patchelf --force-rpath --set-rpath $RPATH $CRAFT_PRIME/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/libgdk_pixbuf-2.0.so.0.4200.10
+      for lib in $CRAFT_PRIME/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/libgdk_pixbuf-2.0.so.*; do
+        patchelf --force-rpath --set-rpath $RPATH "$lib"
+      done
 
       # init loader cache
       mkdir -p $CRAFT_PRIME/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/gdk-pixbuf-2.0/2.10.0/
