@@ -1,4 +1,4 @@
-import 'package:file_picker/file_picker.dart';
+import '../widgets/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:yaru/yaru.dart';
 
@@ -26,15 +26,11 @@ class _Step3AssertionsStepState extends State<Step3AssertionsStep> {
   }
 
   Future<void> _pickAssertionFiles() async {
-    final result = await FilePicker.platform.pickFiles(
-      dialogTitle: 'Select assertion files',
-      type: FileType.any,
-      allowedExtensions: ['assert', 'txt', 'am', 'yaml', 'yml'],
-      allowMultiple: true,
+    final files = await pickFiles(
+      extensions: ['assert', 'txt', 'am', 'yaml', 'yml'],
     );
-    final paths =
-        result?.files.map((f) => f.path).whereType<String>().toList() ??
-        <String>[];
+    // openFiles returns an empty list when the user cancels.
+    final paths = [for (final f in files) f.path];
     if (paths.isEmpty) return;
     final config = widget.config;
     setState(() {

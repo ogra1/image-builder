@@ -37,9 +37,10 @@ dependencies:
   cupertino_icons: ^1.0.8
   yaru: 10.2.0
   yaru_window: ^0.2.2
-  file_picker: 8.1.6
+  file_selector: ^1.0.3
 
 dev_dependencies:
+  file_selector_platform_interface: ^2.0.0
   plugin_platform_interface: ^2.1.2
   flutter_test:
     sdk: flutter

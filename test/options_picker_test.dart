@@ -1,39 +1,21 @@
-import 'package:file_picker/file_picker.dart';
+import 'package:file_selector_platform_interface/file_selector_platform_interface.dart';
 import 'package:flutter/material.dart';
 
 import 'test_tools.dart';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:ubuntu_image_gui/models/build_config.dart';
 import 'package:ubuntu_image_gui/models/model_assertion.dart';
 import 'package:ubuntu_image_gui/views/wizard_page.dart';
 
-/// Fake file_picker platform: answers [directory] for every
+/// Fake file_selector platform: answers [directory] for every
 /// `getDirectoryPath` call.
-class _FakeFilePicker extends FilePicker with MockPlatformInterfaceMixin {
+class _FakeFileSelector extends FileSelectorPlatform {
   @override
   Future<String?> getDirectoryPath({
-    String? dialogTitle,
-    bool lockParentWindow = false,
     String? initialDirectory,
+    String? confirmButtonText,
   }) async => directory;
-
-  @override
-  Future<FilePickerResult?> pickFiles({
-    String? dialogTitle,
-    String? initialDirectory,
-    FileType type = FileType.any,
-    List<String>? allowedExtensions,
-    Function(FilePickerStatus)? onFileLoading,
-    bool allowCompression = true,
-    int compressionQuality = 30,
-    bool allowMultiple = false,
-    bool withData = false,
-    bool withReadStream = false,
-    bool lockParentWindow = false,
-    bool readSequential = false,
-  }) async => null;
 
   String? directory;
 }
@@ -51,7 +33,7 @@ Finder pageTitle(String title) => find.byWidgetPredicate(
 
 void main() {
   late BuildConfig config;
-  late _FakeFilePicker picker;
+  late _FakeFileSelector picker;
 
   setUp(() {
     config = stubbedConfig()
@@ -59,8 +41,8 @@ void main() {
         'model': 'test-model',
         'grade': 'dangerous',
       }, parsed: true);
-    picker = _FakeFilePicker();
-    FilePicker.platform = picker;
+    picker = _FakeFileSelector();
+    FileSelectorPlatform.instance = picker;
   });
 
   Future<void> browse(WidgetTester tester, Finder button) async {

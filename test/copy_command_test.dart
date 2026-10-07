@@ -1,27 +1,17 @@
-import 'package:file_picker/file_picker.dart';
+import 'package:file_selector_platform_interface/file_selector_platform_interface.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:yaru/yaru.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:ubuntu_image_gui/models/build_config.dart';
 import 'package:ubuntu_image_gui/views/step1_model_step.dart';
 
-class _FakeFilePicker extends FilePicker with MockPlatformInterfaceMixin {
+class _FakeFileSelector extends FileSelectorPlatform {
   @override
-  Future<FilePickerResult?> pickFiles({
-    String? dialogTitle,
+  Future<XFile?> openFile({
+    List<XTypeGroup>? acceptedTypeGroups,
     String? initialDirectory,
-    FileType type = FileType.any,
-    List<String>? allowedExtensions,
-    Function(FilePickerStatus)? onFileLoading,
-    bool allowCompression = true,
-    int compressionQuality = 30,
-    bool allowMultiple = false,
-    bool withData = false,
-    bool withReadStream = false,
-    bool lockParentWindow = false,
-    bool readSequential = false,
+    String? confirmButtonText,
   }) async => null;
 }
 
@@ -30,7 +20,7 @@ void main() {
     'copying the export-login command shows a snackbar and puts the '
     'exact command on the clipboard',
     (tester) async {
-      FilePicker.platform = _FakeFilePicker();
+      FileSelectorPlatform.instance = _FakeFileSelector();
 
       // The clipboard platform channel is not backed by a real OS clipboard
       // in the widget-test sandbox (getData would hang forever). Mock it to

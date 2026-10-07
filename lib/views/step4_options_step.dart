@@ -1,4 +1,4 @@
-import 'package:file_picker/file_picker.dart';
+import '../widgets/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:yaru/yaru.dart';
 
@@ -50,16 +50,9 @@ class _Step4OptionsStepState extends State<Step4OptionsStep> {
   }
 
   Future<String?> _pickFile({
-    required String dialogTitle,
     List<String> extensions = const ['assert', 'txt', 'yaml', 'yml', 'info'],
-  }) async {
-    final result = await FilePicker.platform.pickFiles(
-      dialogTitle: dialogTitle,
-      type: FileType.any,
-      allowedExtensions: extensions,
-    );
-    return result?.files.single.path;
-  }
+  }) async =>
+      (await pickFile(extensions: extensions))?.path;
 
   /// Picks a directory via the native dialog. Sets [ctrl] and, crucially,
   /// the bound config field via [onPicked] — assigning [TextEditingController.text]
@@ -67,10 +60,9 @@ class _Step4OptionsStepState extends State<Step4OptionsStep> {
   /// updated here explicitly.
   Future<void> _pickDir(
     TextEditingController ctrl,
-    String title,
     ValueChanged<String> onPicked,
   ) async {
-    final path = await FilePicker.platform.getDirectoryPath(dialogTitle: title);
+    final path = await pickDirectory();
     if (path != null) {
       ctrl.text = path;
       onPicked(path);
@@ -118,7 +110,6 @@ class _Step4OptionsStepState extends State<Step4OptionsStep> {
                       FilledButton.tonalIcon(
                         onPressed: () => _pickDir(
                           _workCtrl,
-                          'Select workdir',
                           (p) => c.workdir = p,
                         ),
                         icon: const Icon(YaruIcons.folder_open, size: 18),
@@ -182,10 +173,8 @@ class _Step4OptionsStepState extends State<Step4OptionsStep> {
                       const SizedBox(width: 8),
                       FilledButton.tonalIcon(
                         onPressed: () async {
-                          final p = await _pickFile(
-                            dialogTitle: 'Select .disk/info file',
-                            extensions: const ['info', 'txt'],
-                          );
+                          final p =
+                              await _pickFile(extensions: const ['info', 'txt']);
                           if (p != null) {
                             _diskInfoCtrl.text = p;
                             c.diskInfoFile = p;
@@ -283,7 +272,6 @@ class _Step4OptionsStepState extends State<Step4OptionsStep> {
                       FilledButton.tonalIcon(
                         onPressed: () => _pickDir(
                           _aaDirCtrl,
-                          'Select AppArmor features dir',
                           (p) => c.apparmorFeaturesDir = p,
                         ),
                         icon: const Icon(YaruIcons.folder_open, size: 18),

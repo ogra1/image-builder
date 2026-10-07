@@ -1,20 +1,18 @@
-import 'package:file_picker/file_picker.dart';
+import 'package:file_selector_platform_interface/file_selector_platform_interface.dart';
 import 'package:flutter/material.dart';
 
 import 'test_tools.dart';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:ubuntu_image_gui/models/build_config.dart';
 import 'package:ubuntu_image_gui/models/model_assertion.dart';
 import 'package:ubuntu_image_gui/views/wizard_page.dart';
 
-class _FakeFilePicker extends FilePicker with MockPlatformInterfaceMixin {
+class _FakeFileSelector extends FileSelectorPlatform {
   @override
   Future<String?> getDirectoryPath({
-    String? dialogTitle,
-    bool lockParentWindow = false,
     String? initialDirectory,
+    String? confirmButtonText,
   }) async => directory;
 
   String? directory;
@@ -31,7 +29,7 @@ void main() {
 
   setUp(() {
     config = stubbedConfig();
-    FilePicker.platform = _FakeFilePicker();
+    FileSelectorPlatform.instance = _FakeFileSelector();
   });
 
   testWidgets('gate requires model AND output dir; tooltip names the '
@@ -121,8 +119,8 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
 
-    final picker = _FakeFilePicker()..directory = '/srv/images';
-    FilePicker.platform = picker;
+    final picker = _FakeFileSelector()..directory = '/srv/images';
+    FileSelectorPlatform.instance = picker;
     config.setModel(
       ModelAssertion('/tmp/m.assert', {
         'model': 'test-model',

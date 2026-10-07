@@ -1,4 +1,4 @@
-import 'package:file_picker/file_picker.dart';
+import '../widgets/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:yaru/yaru.dart';
 
@@ -311,12 +311,8 @@ class _AddSnapDialogState extends State<_AddSnapDialog> {
   }
 
   Future<void> _pickLocal() async {
-    final result = await FilePicker.platform.pickFiles(
-      dialogTitle: 'Select a local .snap file',
-      type: FileType.any,
-      allowedExtensions: ['snap'],
-    );
-    final path = result?.files.single.path;
+    final file = await pickFile(extensions: ['snap']);
+    final path = file?.path;
     if (path != null && path.isNotEmpty) {
       setState(() => _localCtrl.text = path);
     }
@@ -473,11 +469,8 @@ class _AddComponentDialogState extends State<_AddComponentDialog> {
   }
 
   Future<void> _pickLocal() async {
-    final result = await FilePicker.platform.pickFiles(
-      dialogTitle: 'Select a local component file',
-      type: FileType.any,
-    );
-    final path = result?.files.single.path;
+    final file = await pickFile();
+    final path = file?.path;
     if (path != null && path.isNotEmpty) {
       setState(() => _localCtrl.text = path);
     }

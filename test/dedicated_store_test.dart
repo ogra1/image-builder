@@ -1,31 +1,19 @@
-import 'package:file_picker/file_picker.dart';
+import 'package:file_selector_platform_interface/file_selector_platform_interface.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:ubuntu_image_gui/models/build_config.dart';
 import 'package:ubuntu_image_gui/views/step1_model_step.dart';
 
-class _FakeFilePicker extends FilePicker with MockPlatformInterfaceMixin {
+class _FakeFileSelector extends FileSelectorPlatform {
   @override
-  Future<FilePickerResult?> pickFiles({
-    String? dialogTitle,
+  Future<XFile?> openFile({
+    List<XTypeGroup>? acceptedTypeGroups,
     String? initialDirectory,
-    FileType type = FileType.any,
-    List<String>? allowedExtensions,
-    Function(FilePickerStatus)? onFileLoading,
-    bool allowCompression = true,
-    int compressionQuality = 30,
-    bool allowMultiple = false,
-    bool withData = false,
-    bool withReadStream = false,
-    bool lockParentWindow = false,
-    bool readSequential = false,
-  }) async =>
-      path == null
-          ? null
-          : FilePickerResult([
-              PlatformFile(name: 'store.auth', path: path, size: 0),
-            ]);
+    String? confirmButtonText,
+  }) async {
+    final p = path;
+    return p == null ? null : XFile(p, name: 'store.auth');
+  }
 
   String? path;
 }
@@ -84,8 +72,8 @@ void main() {
     'step 1: dedicated store card picks the credential file, shows it, '
     'and the launch follows; removing it reverts to the global store',
     (tester) async {
-      final picker = _FakeFilePicker();
-      FilePicker.platform = picker;
+      final picker = _FakeFileSelector();
+      FileSelectorPlatform.instance = picker;
       final config = BuildConfig();
 
       tester.view.physicalSize = const Size(1600, 1000);

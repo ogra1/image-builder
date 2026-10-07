@@ -1,4 +1,4 @@
-import 'package:file_picker/file_picker.dart';
+import '../widgets/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:yaru/yaru.dart';
@@ -35,9 +35,7 @@ class _Step1ModelStepState extends State<Step1ModelStep> {
   }
 
   Future<void> _pickDir() async {
-    final path = await FilePicker.platform.getDirectoryPath(
-      dialogTitle: 'Select the output directory',
-    );
+    final path = await pickDirectory();
     if (path == null || path.isEmpty) return; // cancelled
     _outCtrl.text = path;
     widget.config.outputDir = path;
@@ -46,12 +44,10 @@ class _Step1ModelStepState extends State<Step1ModelStep> {
 
   Future<void> _pick() async {
     _error = null;
-    final result = await FilePicker.platform.pickFiles(
-      dialogTitle: 'Select the signed model assertion',
-      type: FileType.any,
-      allowedExtensions: ['assert', 'txt', 'am', 'yaml', 'yml', 'model'],
+    final file = await pickFile(
+      extensions: ['assert', 'txt', 'am', 'yaml', 'yml', 'model'],
     );
-    final path = result?.files.single.path;
+    final path = file?.path;
     if (path == null || path.isEmpty) return; // cancelled
     final parsed = ModelAssertion.load(path);
     if (parsed.isClassic) {
@@ -303,11 +299,8 @@ class _DedicatedStoreCard extends StatefulWidget {
 
 class _DedicatedStoreCardState extends State<_DedicatedStoreCard> {
   Future<void> _pickAuthFile() async {
-    final result = await FilePicker.platform.pickFiles(
-      dialogTitle: 'Select the dedicated store credential file',
-      type: FileType.any,
-    );
-    final path = result?.files.single.path;
+    final file = await pickFile();
+    final path = file?.path;
     if (path == null || path.isEmpty) return; // cancelled
     widget.config.storeAuthFile = path;
     setState(() {});
